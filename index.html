@@ -35,29 +35,180 @@ html{min-width:0}body{min-width:0;overflow-x:hidden}.wrap{width:100%;max-width:1
 #libraryView[hidden],#studioView[hidden]{display:none!important}.libraryHeading{display:flex;align-items:center;gap:14px;font-size:20px;margin-bottom:14px}.libraryHeading #libraryCount{margin-left:auto}.iconSmall{width:44px;height:44px;padding:0;font-size:23px}.libraryItems{display:grid;gap:9px}.libraryItem{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid #e2e8f0;border-radius:14px;min-height:62px}.libraryTitle{flex:1;min-width:0;font-weight:700}.libraryItem button{width:45px;height:45px;padding:0;display:grid;place-items:center;border-radius:13px}.libraryItem button svg{width:21px;height:21px}.libraryItem .deleteItem{color:#64748b}.libraryEmpty{text-align:center;color:#64748b;padding:35px 8px}.nav-actions{gap:6px}@media(max-width:650px){.libraryItem{gap:6px;padding:7px}.libraryItem button{width:43px;height:43px}.libraryTitle{font-size:14px}.topbar{gap:5px}.nav-actions{gap:4px}}
 </style><style id="library-notation">
 .libraryItem{align-items:center}.libraryEntry{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}.libraryTitle{font-size:14px}.libraryStaff{height:78px;overflow-x:auto;overflow-y:hidden;border-radius:9px;background:#fafbfc;scrollbar-width:thin}.libraryStaff svg{display:block;height:76px;max-width:none}.libraryItem button{flex-shrink:0}@media(max-width:650px){.libraryStaff{height:70px}.libraryStaff svg{height:68px}.libraryItem{align-items:center}.libraryItem button{width:39px;height:39px}}
-</style></head><body><main class="wrap"><header class="topbar"><div class="brand">🎹 <span>Notalarım</span></div><div class="nav-actions"><button id="libraryButton" class="more" title="Kütüphane" aria-label="Kütüphane"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20"/><path d="M9 7h6"/></svg></button><button id="status" class="connection" title="Bluetooth MIDI bağlan" aria-label="Bluetooth MIDI bağlan">● Bağlan</button><button id="more" class="more" aria-label="Diğer bağlantı seçenekleri" title="Diğer bağlantı seçenekleri">⋯</button></div></header>
-<div id="connectionMenu" class="connection-menu" hidden><button id="ble">Bluetooth MIDI</button><button id="usb">USB / Sistem MIDI</button><button id="disconnect" disabled>Bağlantıyı kes</button></div><div id="log" role="alert" class="message"></div>
+</style><style>
+.connection-actions,.system-midi{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:inherit;max-width:100%}
+.system-midi{flex-basis:100%}
+.system-midi select{min-width:0;max-width:100%;padding:7px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:inherit}
+.system-midi .small{flex-basis:100%;text-align:right;margin:0}
+</style></head><body><main class="wrap"><header class="topbar"><div class="brand">🎹 <span>Notalarım</span></div><div class="nav-actions"><button id="libraryButton" class="more" title="Kütüphane" aria-label="Kütüphane"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20"/><path d="M9 7h6"/></svg></button><button id="status" class="connection" aria-controls="connectionMenu" aria-expanded="false">● Bağlan</button><button id="more" class="more" aria-controls="connectionMenu" aria-expanded="false" aria-label="Diğer bağlantı seçenekleri" title="Diğer bağlantı seçenekleri">⋯</button></div></header>
+<div id="connectionMenu" class="connection-menu" hidden>
+  <div class="system-midi">
+    <label for="systemInput">Sistem MIDI</label>
+    <select id="systemInput" aria-describedby="systemMidiStatus" disabled>
+      <option value="">MIDI girişi seçin</option>
+    </select>
+    <button id="usb">Yenile</button>
+    <p id="systemMidiStatus" class="small" role="status"></p>
+  </div>
+  <div class="connection-actions">
+    <button id="ble">Bluetooth MIDI tara</button>
+    <button id="disconnect" disabled>Bağlantıyı kes</button>
+  </div>
+</div><div id="log" role="alert" class="message"></div>
 <section id="libraryView" class="panel" hidden><div class="libraryHeading"><button id="backLibrary" class="iconSmall" title="Geri" aria-label="Geri">←</button><strong>Kütüphane</strong><span id="libraryCount" class="small"></span></div><div id="libraryItems" class="libraryItems"></div></section><div id="studioView"><section class="panel music"><div class="staffbox" id="staff" aria-label="Nota çizgileri"></div><div class="mini-settings"><label for="bpm">♩ <input id="bpm" type="number" min="40" max="240" value="120" aria-label="Tempo"></label><select id="names" aria-label="Nota isimleri"><option value="tr">Do Re Mi</option><option value="en">C D E</option></select><span id="count" class="small">0 nota</span></div></section>
 <section class="panel playarea"><div class="controls"><button class="primary" id="record" title="Kaydet" aria-label="Kaydet"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="currentColor" stroke="none"/></svg></button><button id="stop" disabled title="Kaydı bitir" aria-label="Kaydı bitir"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" stroke="none"/></svg></button><button id="play" disabled title="Tekrar çal" aria-label="Tekrar çal"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></button><button id="stopplay" disabled title="Çalmayı durdur" aria-label="Çalmayı durdur"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" stroke="none"/></svg></button><button id="clear" title="Temizle" aria-label="Temizle"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2.5 6.3M3 4v7h7"/></svg></button><button id="export" disabled title="MIDI indir" aria-label="MIDI indir"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg></button></div><div id="recordstatus" class="small" aria-live="polite"></div><div class="kbd" id="keyboard"></div></section></div></main>
 <script>
 'use strict';
 const SERVICE='03b80e5a-ede8-4b33-a751-6ce34ec4c700',CHAR='7772e5db-3868-4112-a1a9-f2669d106bf3';
 const $=id=>document.getElementById(id);const noteTR=['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'],noteEN=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
-const active=new Map(),voices=new Map();let events=[],recording=false,recordStart=0,playback=false,playTimers=[],midiAccess=null,bleDevice=null,bleChar=null,source='',audio=null,recordingTick=null;const now=()=>performance.now();
+const active=new Map(),voices=new Map();let events=[],recording=false,recordStart=0,playback=false,playTimers=[],audio=null,recordingTick=null;const now=()=>performance.now();
+let midiAccess = null, systemInput = null, bleDevice = null, bleChar = null;
 function name(n){return ($('names').value==='tr'?noteTR:noteEN)[n%12]+(Math.floor(n/12)-1)}
-function error(s){$('log').textContent=s}function setStatus(s,connected=false){$('status').textContent=connected?'● Bağlı':'● Bağlan';$('status').title=s;$('status').setAttribute('aria-label',s);$('status').className='connection'+(connected?' good':'');$('disconnect').disabled=!connected}
+function error(s){$('log').textContent=s}function setStatus(s,connected=false){$('status').textContent=connected?'● Bağlı':'● Bağlan';$('status').title=s;$('status').setAttribute('aria-label',connected ? s : 'MIDI bağlantı seçenekleri');$('status').className='connection'+(connected?' good':'');$('disconnect').disabled=!connected}
 function ctx(){if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();return audio}
 function soundOn(note,velocity=90,id=note){try{const c=ctx(),o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.value=440*Math.pow(2,(note-69)/12);g.gain.setValueAtTime(0.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(Math.max(.015,.17*velocity/127),c.currentTime+.025);o.connect(g);g.connect(c.destination);o.start();voices.set(id,{o,g,c})}catch(e){}}
 function soundOff(id){const v=voices.get(id);if(!v)return;try{v.g.gain.cancelScheduledValues(v.c.currentTime);v.g.gain.setTargetAtTime(.0001,v.c.currentTime,.055);v.o.stop(v.c.currentTime+.35)}catch(e){}voices.delete(id)}
 function noteOn(n,v=90){if(n<0||n>127||active.has(n))return;const t=now();active.set(n,{t,v});if(recording)events.push({kind:'on',n,v,t:t-recordStart});soundOn(n,v,'live-'+n);highlight();render()}
 function noteOff(n){if(!active.has(n))return;active.delete(n);if(recording)events.push({kind:'off',n,v:0,t:now()-recordStart});soundOff('live-'+n);highlight();render()}
 function midiMessage(status,n,v){if(n===undefined||v===undefined)return;const cmd=status&0xf0;if(cmd===0x90&&v>0)noteOn(n,v);else if(cmd===0x80||(cmd===0x90&&v===0))noteOff(n)}
-function disconnect(){if(midiAccess){for(const i of midiAccess.inputs.values())i.onmidimessage=null;midiAccess.onstatechange=null;midiAccess=null}if(bleChar){try{bleChar.stopNotifications()}catch(e){}bleChar=null}if(bleDevice?.gatt?.connected)bleDevice.gatt.disconnect();bleDevice=null;source='';for(const n of [...active.keys()])noteOff(n);setStatus('MIDI bağlı değil')}
-$('disconnect').onclick=()=>{disconnect();$('connectionMenu').hidden=true};$('status').onclick=()=>{if($('status').classList.contains('good')){$('connectionMenu').hidden=!$('connectionMenu').hidden}else $('ble').click()};$('more').onclick=()=>{$('connectionMenu').hidden=!$('connectionMenu').hidden};
-$('usb').onclick=async()=>{error('');try{if(!navigator.requestMIDIAccess)throw Error('Tarayıcı Web MIDI desteklemiyor.');disconnect();midiAccess=await navigator.requestMIDIAccess({sysex:false});source='web';$('connectionMenu').hidden=true;const bind=()=>{const ins=[...midiAccess.inputs.values()].filter(x=>x.state==='connected');for(const input of midiAccess.inputs.values())input.onmidimessage=null;ins.forEach(i=>i.onmidimessage=e=>{const d=e.data;midiMessage(d[0],d[1],d[2])});setStatus(ins.length?'MIDI: '+ins.map(x=>x.name).join(', '):'MIDI aygıtı bekleniyor',ins.length>0)};midiAccess.onstatechange=bind;bind()}catch(e){error(e.message);setStatus('MIDI bağlantı hatası')}};
+function setConnectionMenu(open) {
+  $('connectionMenu').hidden = !open;
+  for (const id of ['status', 'more']) $(id).setAttribute('aria-expanded', String(open));
+}
+
+function disconnect() {
+  if (systemInput) {
+    systemInput.onmidimessage = null;
+    systemInput = null;
+  }
+  $('systemInput').value = '';
+
+  if (bleChar) {
+    bleChar.removeEventListener('characteristicvaluechanged', onBluetoothMidi);
+    bleChar = null;
+  }
+  if (bleDevice) {
+    const device = bleDevice;
+    bleDevice = null;
+    device.removeEventListener('gattserverdisconnected', onBluetoothDisconnect);
+    if (device.gatt.connected) device.gatt.disconnect();
+  }
+
+  for (const note of active.keys()) noteOff(note);
+  setStatus('MIDI bağlı değil');
+}
+
+function refreshSystemInputs() {
+  if (!midiAccess) return;
+  const inputs = [...midiAccess.inputs.values()].filter(input => input.state === 'connected');
+  if (systemInput && !inputs.includes(systemInput)) {
+    disconnect();
+    setStatus('Sistem MIDI bağlantısı kesildi');
+  }
+
+  const select = $('systemInput');
+  select.replaceChildren(new Option('MIDI girişi seçin', ''));
+  for (const input of inputs) select.add(new Option(input.name || 'Adsız MIDI girişi', input.id));
+  select.value = systemInput?.id ?? '';
+  select.disabled = inputs.length === 0 || $('ble').disabled;
+  $('systemMidiStatus').textContent = inputs.length ? '' :
+    'MIDI girişi bulunamadı. Mac’te Ses MIDI Ayarları → MIDI Stüdyosu → Bluetooth üzerinden klavyenizi bağlayın.';
+}
+
+async function loadSystemInputs() {
+  const refresh = $('usb');
+  const message = $('systemMidiStatus');
+  if (refresh.disabled) return;
+  if (midiAccess) {
+    refreshSystemInputs();
+    return;
+  }
+  if (!navigator.requestMIDIAccess) {
+    message.textContent = 'Sistem MIDI için Chrome gibi Web MIDI destekleyen bir tarayıcı kullanın.';
+    return;
+  }
+
+  refresh.disabled = true;
+  message.textContent = 'MIDI girişleri aranıyor…';
+  try {
+    midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+    midiAccess.onstatechange = refreshSystemInputs;
+    refreshSystemInputs();
+  } catch (e) {
+    message.textContent = e.name === 'NotAllowedError' || e.name === 'SecurityError' ?
+      'Tarayıcıda bu siteye MIDI izni verin, ardından Yenile’yi seçin.' :
+      'Sistem MIDI açılamadı: ' + e.message;
+  } finally {
+    refresh.disabled = false;
+  }
+}
+
+function toggleConnectionMenu() {
+  const open = $('connectionMenu').hidden;
+  setConnectionMenu(open);
+  if (open) loadSystemInputs();
+}
+
+$('status').onclick = $('more').onclick = toggleConnectionMenu;
+$('usb').onclick = loadSystemInputs;
+$('disconnect').onclick = () => {
+  disconnect();
+  setConnectionMenu(false);
+};
+$('systemInput').onchange = () => {
+  const select = $('systemInput');
+  const input = midiAccess?.inputs.get(select.value);
+  if (!input || input.state !== 'connected') {
+    if (systemInput) disconnect();
+    refreshSystemInputs();
+    return;
+  }
+
+  disconnect();
+  error('');
+  systemInput = input;
+  input.onmidimessage = ({ data }) => midiMessage(data[0], data[1], data[2]);
+  select.value = input.id;
+  setStatus('MIDI: ' + select.selectedOptions[0].text, true);
+};
+
 // BLE MIDI parser: header, timestamp-low, status and MIDI data; supports running status and multiple events.
 function parseBLE(view){const a=new Uint8Array(view.buffer,view.byteOffset,view.byteLength);if(a.length<3)return;let i=1,running=0;while(i<a.length){if(!(a[i]&0x80)){i++;continue}i++;if(i>=a.length)break;let status=a[i];if(status>=0x80&&status<0xf0){running=status;i++}else if(status>=0xf0){i++;continue}else if(running){status=running}else continue;const type=status&0xf0;const count=(type===0xc0||type===0xd0)?1:2;if(i+count>a.length)break;const n=a[i++],v=count===2?a[i++]:0;if(type===0x80||type===0x90)midiMessage(status,n,v);while(i<a.length&&!(a[i]&0x80)&&running){if(i+count>a.length)break;const n2=a[i++],v2=count===2?a[i++]:0;if(type===0x80||type===0x90)midiMessage(status,n2,v2)}}}
-$('ble').onclick=async()=>{error('');try{if(!navigator.bluetooth)throw Error('Web Bluetooth kullanılamıyor. HTTPS ve uyumlu tarayıcı gerekli.');disconnect();const d=await navigator.bluetooth.requestDevice({filters:[{services:[SERVICE]}],optionalServices:[SERVICE]});bleDevice=d;d.addEventListener('gattserverdisconnected',()=>{if(bleDevice===d){bleChar=null;bleDevice=null;setStatus('Bluetooth bağlantısı kesildi')}});const server=await d.gatt.connect(),svc=await server.getPrimaryService(SERVICE);bleChar=await svc.getCharacteristic(CHAR);await bleChar.startNotifications();bleChar.addEventListener('characteristicvaluechanged',e=>parseBLE(e.target.value));source='ble';$('connectionMenu').hidden=true;setStatus('Bluetooth: '+(d.name||'BLE MIDI'),true)}catch(e){if(e.name!=='NotFoundError')error(e.message);setStatus('Bluetooth bağlı değil')}};
+function onBluetoothMidi(event) {
+  parseBLE(event.target.value);
+}
+
+function onBluetoothDisconnect() {
+  disconnect();
+  setStatus('Bluetooth bağlantısı kesildi');
+}
+
+$('ble').onclick = async () => {
+  let device;
+  error('');
+  $('ble').disabled = true;
+  refreshSystemInputs();
+  try {
+    if (!navigator.bluetooth) throw Error('Web Bluetooth kullanılamıyor. HTTPS ve uyumlu tarayıcı gerekli.');
+    device = await navigator.bluetooth.requestDevice({ filters: [{ services: [SERVICE] }] });
+    disconnect();
+    bleDevice = device;
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE);
+    bleChar = await service.getCharacteristic(CHAR);
+    await bleChar.startNotifications();
+    bleChar.addEventListener('characteristicvaluechanged', onBluetoothMidi);
+    device.addEventListener('gattserverdisconnected', onBluetoothDisconnect);
+    setConnectionMenu(false);
+    setStatus('Bluetooth: ' + (device.name || 'BLE MIDI'), true);
+  } catch (e) {
+    if (device && bleDevice === device) disconnect();
+    if (e.name !== 'NotFoundError') error(e.message);
+  } finally {
+    $('ble').disabled = false;
+    refreshSystemInputs();
+  }
+};
 // IndexedDB: tarayıcıda kalıcı, isim istemeyen en fazla 30 kayıt.
 const DB_NAME='notalarim-midi-library', STORE='recordings';
 let dbPromise=null, nextSequence=1, libraryPlayingId=null;
